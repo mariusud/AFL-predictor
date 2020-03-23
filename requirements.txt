@@ -3,3 +3,4 @@ sklearn
 pandas
 numpy
 seaborn
+ipython-autotime
