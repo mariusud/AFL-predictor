@@ -12,7 +12,14 @@ pd.set_option("display.max_rows", 25)
 match_results = pd.read_csv("datasets/results.csv")
 player_stats = pd.read_csv("datasets/stats.csv")
 odds = pd.read_csv("datasets/odds.csv") #delivered by footyWire
+fixtures = pd.read_csv("datasets/fixtures.csv")
+ladder = pd.read_csv("datasets/ladder.csv")
 
+# %% 
+ladder.tail(3)
+
+# %%
+odds.tail(3)
 
 # %%
 def get_cleaned_results():
@@ -28,28 +35,31 @@ def get_cleaned_results():
     )
     return df
 
+# %%
+def get_home_ladder():
+    df = pd.read_csv("datasets/ladder.csv")
+    df = ( df
+            .drop(columns=['Unnamed: 0','Percentage'])
+            .rename(columns={'Season' : 'season', 'Team' : 'home', 'Round.Number' : 'round',
+            'Season.Points' : 'feature_points', 'Score.For' : 'feature_scored', 'Score.Against' : 'feature_conceded', 'Ladder.Position' : 'homeLadderPosition'
+            })
+            )
+    return df
 
+
+def get_away_ladder():
+    df = pd.read_csv("datasets/ladder.csv")
+    df = ( df
+            .drop(columns=['Unnamed: 0','Percentage', 'Season.Points', 'Score.For', 'Score.Against'])
+            .rename(columns={'Season' : 'season', 'Team' : 'away', 'Round.Number' : 'round',
+            'Ladder.Position' : 'awayLadderPosition'
+            })
+            )
+    return df
+# %%%
 clean_results = get_cleaned_results()
 clean_results.tail(100)
-
-
 # %%
-form_btwn_teams = clean_results[['game', 'home', 'away', 'margin']].copy()
-#Calculates 
-form_btwn_teams['feature_MarginPast5'] = (clean_results.groupby(['home', 'away'])['margin']
-                                                          .transform(lambda row: row.rolling(5).mean().shift())
-                                                          .fillna(0))
-
-form_btwn_teams['feature_WinLossPast5'] = (clean_results.assign(win=lambda df: df.apply(lambda row: 1 if row.margin > 0 else 0, axis='columns'))
-              .groupby(['home', 'away'])['win']
-              .transform(lambda row: row.rolling(5).mean().shift() * 5)
-              .fillna(0))
-
-
+ladder = get_away_ladder()
+ladder.tail(10)
 # %%
-features = clean_results[['date', 'game', 'home', 'away', 'venue', 'season']].copy()
-feature_df = pd.merge(features, form_btwn_teams.drop(columns=['margin']), on=['game', 'home', 'away'])
-feature_df = pd.merge(feature_df, clean_results[['game', 'result']], on='game')
-feature_df.tail(5)
-
-
